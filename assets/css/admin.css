@@ -1,0 +1,89 @@
+/* ── Sticker Creator – Admin Styles ── */
+
+.sc-admin-wrap {
+    max-width: 1100px;
+}
+
+.sc-admin-shortcode-info {
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+
+.sc-admin-shortcode-info h3 {
+    margin-top: 0;
+}
+
+.sc-admin-shortcode-info code {
+    background: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.sc-admin-section {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.sc-admin-section h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.sc-admin-section .description {
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.sc-sizes-table input,
+.sc-pricing-table input,
+.sc-pricing-table select,
+.sc-qty-table input {
+    width: 100%;
+    padding: 6px 10px;
+}
+
+.sc-pricing-table {
+    font-size: 0.9rem;
+}
+
+.sc-pricing-table td {
+    vertical-align: middle;
+}
+
+.sc-pricing-table select {
+    min-width: 100px;
+}
+
+/* Override selector */
+.sc-override-selector {
+    margin-bottom: 12px;
+}
+
+.sc-override-selector label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.sc-override-selector select {
+    min-width: 350px;
+    padding: 6px 10px;
+}
+
+#sc-override-breaks-wrap input {
+    width: 100%;
+    padding: 6px 10px;
+}
+
+#sc-override-status {
+    font-style: italic;
+    margin-bottom: 10px;
+}

@@ -1,0 +1,747 @@
+/* ── Sticker Creator – Frontend Styles ── */
+
+/* Reset & Wrapper */
+.sc-wrap {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #1a1a2e;
+}
+
+.sc-wrap *,
+.sc-wrap *::before,
+.sc-wrap *::after {
+    box-sizing: border-box;
+}
+
+/* Step Titles */
+.sc-step-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+}
+
+.sc-step {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+/* ── Upload Zone ── */
+.sc-upload-zone {
+    border: 2px dashed #c4cdd5;
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: #fff;
+}
+
+.sc-upload-zone:hover,
+.sc-upload-zone.sc-drag-over {
+    border-color: #5c6bc0;
+    background: #eef0fb;
+}
+
+.sc-upload-zone.sc-uploading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.sc-upload-icon {
+    color: #9e9e9e;
+    margin-bottom: 12px;
+}
+
+.sc-upload-zone p {
+    margin: 4px 0;
+    color: #666;
+}
+
+.sc-upload-or {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.sc-upload-hint {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 12px !important;
+}
+
+.sc-upload-disclaimer {
+    font-size: 0.8rem;
+    color: #e67e22;
+    margin-top: 8px !important;
+    font-style: italic;
+}
+
+.sc-upload-preview-wrap {
+    text-align: center;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.sc-upload-preview-wrap img {
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sc-upload-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.sc-bg-status {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* ── Buttons ── */
+.sc-btn {
+    display: inline-block;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.sc-btn-primary {
+    background: #5c6bc0;
+    color: #fff;
+}
+
+.sc-btn-primary:hover {
+    background: #3f51b5;
+}
+
+.sc-btn-primary:disabled {
+    background: #bbb;
+    cursor: not-allowed;
+}
+
+.sc-btn-outline {
+    background: transparent;
+    border: 2px solid #5c6bc0;
+    color: #5c6bc0;
+    cursor: pointer;
+}
+
+.sc-btn-outline:hover {
+    background: #5c6bc0;
+    color: #fff;
+}
+
+.sc-btn-sm {
+    padding: 6px 16px;
+    font-size: 0.85rem;
+}
+
+.sc-btn-lg {
+    padding: 14px 32px;
+    font-size: 1.05rem;
+    width: 100%;
+}
+
+.sc-btn-danger {
+    background: #e53935;
+    color: #fff;
+}
+
+.sc-btn-danger:hover {
+    background: #c62828;
+}
+
+.sc-btn-success {
+    background: #43a047 !important;
+}
+
+/* ── Cut Type Selection ── */
+.sc-cut-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+}
+
+.sc-cut-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sc-cut-option:hover {
+    border-color: #5c6bc0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(92, 107, 192, 0.15);
+}
+
+.sc-cut-option.sc-selected {
+    border-color: #5c6bc0;
+    background: #eef0fb;
+    box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.2);
+}
+
+.sc-cut-option span {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Cut Type Demos */
+.sc-cut-demo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    transition: border-radius 0.3s ease;
+}
+
+.sc-cut-square {
+    border-radius: 0;
+}
+
+.sc-cut-round {
+    border-radius: 50%;
+}
+
+.sc-cut-rounded-rect {
+    border-radius: 16px;
+}
+
+.sc-cut-die-cut {
+    border-radius: 32px 8px 32px 8px;
+    transform: rotate(0deg);
+}
+
+/* ── Finish Selection ── */
+.sc-finish-options {
+    display: flex;
+    gap: 16px;
+}
+
+.sc-finish-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 24px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.sc-finish-option:hover {
+    border-color: #5c6bc0;
+}
+
+.sc-finish-option.sc-selected {
+    border-color: #5c6bc0;
+    background: #eef0fb;
+    box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.2);
+}
+
+.sc-finish-option span {
+    margin-top: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.sc-finish-demo {
+    width: 80px;
+    height: 56px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sc-finish-glossy {
+    background: linear-gradient(135deg, #a8a8a8, #e0e0e0, #a8a8a8);
+}
+
+.sc-finish-matte {
+    background: #c0c0c0;
+}
+
+.sc-shine-effect {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        135deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.6) 45%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0.6) 55%,
+        transparent 70%
+    );
+    animation: sc-shine-sweep 3s ease-in-out infinite;
+}
+
+@keyframes sc-shine-sweep {
+    0%   { transform: translateX(-100%) translateY(-100%) rotate(25deg); }
+    50%  { transform: translateX(100%) translateY(100%) rotate(25deg); }
+    100% { transform: translateX(-100%) translateY(-100%) rotate(25deg); }
+}
+
+/* ── Lamination ── */
+.sc-lamination-options {
+    display: flex;
+    gap: 12px;
+}
+
+.sc-lam-option {
+    padding: 10px 24px;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.sc-lam-option:hover {
+    border-color: #5c6bc0;
+}
+
+.sc-lam-option.sc-selected {
+    border-color: #5c6bc0;
+    background: #eef0fb;
+    color: #5c6bc0;
+}
+
+/* ── Options Grid ── */
+.sc-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.sc-option-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.sc-option-group > label:first-child {
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sc-option-group select,
+.sc-option-group input[type="number"] {
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+
+.sc-option-group select:focus,
+.sc-option-group input[type="number"]:focus {
+    border-color: #5c6bc0;
+    outline: none;
+}
+
+.sc-min-qty-msg {
+    color: #d32f2f;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 6px;
+    margin-bottom: 0;
+}
+
+/* ── Preview & Pricing Layout ── */
+.sc-preview-pricing {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 8px;
+}
+
+.sc-live-preview,
+.sc-pricing-panel {
+    padding: 24px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+/* ── Live Preview Area ── */
+.sc-preview-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    background: repeating-conic-gradient(#f0f0f0 0% 25%, #fff 0% 50%) 0 0 / 20px 20px;
+    border-radius: 12px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sc-preview-placeholder {
+    color: #aaa;
+    font-size: 1rem;
+}
+
+.sc-preview-artwork {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    overflow: visible;
+    transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+}
+
+.sc-preview-artwork img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    border-radius: inherit;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── White sticker backing (fills inside the cut shape) ── */
+.sc-sticker-backing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-radius: inherit;
+    z-index: 0;
+}
+
+/* ── Cut Outline (dashed black border + white sticker backing beyond image) ── */
+.sc-cut-outline {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border: 2px dashed #000;
+    pointer-events: none;
+    z-index: -1;
+    transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+    background: #fff;
+}
+
+/* When white border is off, hide the outline + backing */
+.sc-border-off .sc-cut-outline {
+    background: transparent;
+    border-color: transparent;
+}
+
+.sc-border-off .sc-sticker-backing {
+    background: transparent;
+}
+
+/* Outline shapes match the sticker shape with offset */
+.sc-shape-square .sc-cut-outline {
+    border-radius: 0;
+}
+
+.sc-shape-round .sc-cut-outline {
+    border-radius: 50%;
+}
+
+.sc-shape-rounded-rect .sc-cut-outline {
+    border-radius: 32px;
+}
+
+/* Die-cut: hide the CSS outline; the canvas overlay replaces it */
+.sc-shape-die-cut .sc-cut-outline {
+    display: none;
+}
+
+/* Shape classes */
+.sc-shape-square {
+    border-radius: 0;
+}
+
+.sc-shape-square img {
+    border-radius: 0;
+}
+
+.sc-shape-round {
+    border-radius: 50%;
+}
+
+.sc-shape-round img {
+    border-radius: 50%;
+}
+
+.sc-shape-rounded-rect {
+    border-radius: 24px;
+}
+
+.sc-shape-rounded-rect img {
+    border-radius: 24px;
+}
+
+/* Die-cut: image shown as-is, no geometric clip. Canvas draws the outline. */
+.sc-shape-die-cut {
+    border-radius: 0;
+    overflow: visible;
+}
+
+.sc-shape-die-cut img {
+    border-radius: 0;
+    object-fit: contain;
+}
+
+/* Die-cut: hide rectangular backing; canvas provides shaped backing */
+.sc-shape-die-cut .sc-sticker-backing {
+    display: none;
+}
+
+/* Finish overlay on preview */
+.sc-preview-shine {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 4;
+    border-radius: inherit;
+}
+
+/* Glossy: animated sweeping highlight */
+.sc-preview-shine.sc-shine-active {
+    opacity: 1;
+    background: linear-gradient(
+        135deg,
+        transparent 10%,
+        rgba(255, 255, 255, 0.08) 20%,
+        rgba(255, 255, 255, 0.35) 45%,
+        rgba(255, 255, 255, 0.55) 50%,
+        rgba(255, 255, 255, 0.35) 55%,
+        rgba(255, 255, 255, 0.08) 80%,
+        transparent 90%
+    );
+    background-size: 300% 300%;
+    animation: sc-preview-shine-move 4s ease-in-out infinite;
+}
+
+@keyframes sc-preview-shine-move {
+    0%   { background-position: -100% -100%; }
+    50%  { background-position: 200% 200%; }
+    100% { background-position: -100% -100%; }
+}
+
+/* ── Lamination overlay ── */
+.sc-preview-laminate {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 5;
+    border-radius: inherit;
+    transition: opacity 0.3s;
+}
+
+.sc-preview-laminate.sc-lam-active {
+    opacity: 1;
+    background:
+        linear-gradient(
+            160deg,
+            rgba(255, 255, 255, 0.20) 0%,
+            transparent 30%,
+            transparent 70%,
+            rgba(255, 255, 255, 0.12) 100%
+        ),
+        linear-gradient(
+            45deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.10) 48%,
+            rgba(255, 255, 255, 0.22) 50%,
+            rgba(255, 255, 255, 0.10) 52%,
+            transparent 70%
+        );
+    background-size: 100% 100%, 250% 250%;
+    animation: sc-lam-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes sc-lam-shimmer {
+    0%   { background-position: 0 0, -100% -100%; }
+    50%  { background-position: 0 0, 200% 200%; }
+    100% { background-position: 0 0, -100% -100%; }
+}
+
+/* Material surface effects */
+.sc-glossy-surface {
+    filter: contrast(1.08) saturate(1.15) brightness(1.02);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(255, 255, 255, 0.1) inset;
+}
+
+.sc-glossy-surface::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.30) 0%,
+        rgba(255, 255, 255, 0.05) 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.08) 80%,
+        rgba(255, 255, 255, 0.15) 100%
+    );
+    pointer-events: none;
+    z-index: 3;
+}
+
+.sc-matte-surface {
+    filter: contrast(0.92) saturate(0.80) brightness(0.95);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.sc-matte-surface::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: rgba(180, 180, 180, 0.12);
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Die-cut canvas (behind artwork for white fill + dashed outline) */
+#sc-diecut-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Clear material */
+.sc-mat-clear {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    border: 2px dashed rgba(0, 0, 0, 0.1);
+}
+
+.sc-mat-clear img {
+    opacity: 0.9;
+}
+
+/* ── Pricing Panel ── */
+.sc-price-breakdown {
+    margin-bottom: 20px;
+}
+
+.sc-price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.sc-price-row span:last-child {
+    font-weight: 600;
+    color: #333;
+}
+
+.sc-price-total-row {
+    font-size: 1.2rem;
+    padding: 12px 0;
+}
+
+.sc-price-total-row span {
+    color: #1a1a2e !important;
+    font-weight: 800 !important;
+}
+
+.sc-price-total {
+    font-size: 1.4rem !important;
+    color: #5c6bc0 !important;
+}
+
+.sc-price-discount span:last-child {
+    color: #43a047 !important;
+}
+
+.sc-pricing-panel hr {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 4px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .sc-preview-pricing {
+        grid-template-columns: 1fr;
+    }
+
+    .sc-cut-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sc-options-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sc-finish-options {
+        flex-direction: column;
+    }
+
+    .sc-lamination-options {
+        flex-direction: column;
+    }
+
+    .sc-preview-artwork {
+        width: 180px;
+        height: 180px;
+    }
+}
