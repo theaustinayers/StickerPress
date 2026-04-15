@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Frontend AJAX handlers for Sticker Creator.
+ * Frontend AJAX handlers for StickerPress.
  */
 
 add_action( 'wp_ajax_sc_upload_artwork', 'sc_upload_artwork' );
@@ -81,6 +81,51 @@ function sc_upload_artwork() {
 }
 
 /**
+ * Upload a client-rendered proof PNG (base64 data URL).
+ */
+add_action( 'wp_ajax_sc_upload_proof', 'sc_upload_proof' );
+add_action( 'wp_ajax_nopriv_sc_upload_proof', 'sc_upload_proof' );
+function sc_upload_proof() {
+    check_ajax_referer( 'sc_front_nonce', 'nonce' );
+
+    $data_url = isset( $_POST['proof_data'] ) ? $_POST['proof_data'] : '';
+    if ( empty( $data_url ) || strpos( $data_url, 'data:image/png;base64,' ) !== 0 ) {
+        wp_send_json_error( 'Invalid proof data.' );
+    }
+
+    $base64 = substr( $data_url, strlen( 'data:image/png;base64,' ) );
+    $decoded = base64_decode( $base64, true );
+    if ( ! $decoded || strlen( $decoded ) < 100 ) {
+        wp_send_json_error( 'Invalid image data.' );
+    }
+
+    // Limit size to 10MB
+    if ( strlen( $decoded ) > 10 * 1024 * 1024 ) {
+        wp_send_json_error( 'Proof image too large.' );
+    }
+
+    $upload_dir = wp_upload_dir();
+    $sticker_dir = $upload_dir['basedir'] . '/sticker-creator';
+    if ( ! file_exists( $sticker_dir ) ) {
+        wp_mkdir_p( $sticker_dir );
+    }
+
+    $filename = wp_unique_filename( $sticker_dir, sanitize_file_name( 'proof-' . wp_generate_password( 8, false ) . '.png' ) );
+    $path = $sticker_dir . '/' . $filename;
+
+    if ( file_put_contents( $path, $decoded ) === false ) {
+        wp_send_json_error( 'Failed to save proof.' );
+    }
+
+    $url = $upload_dir['baseurl'] . '/sticker-creator/' . $filename;
+
+    wp_send_json_success( array(
+        'filename' => $filename,
+        'url'      => $url,
+    ));
+}
+
+/**
  * Check if a PNG image has any transparent pixels.
  */
 function sc_png_has_transparency( $path ) {
@@ -144,27 +189,25 @@ function sc_add_to_cart() {
     $size_idx  = intval( $_POST['size_index'] ?? 0 );
     $material  = sanitize_text_field( $_POST['material'] ?? 'vinyl' );
     $finish    = sanitize_text_field( $_POST['finish'] ?? 'glossy' );
-    $laminated = sanitize_text_field( $_POST['laminated'] ?? 'yes' );
+    $laminated = sanitize_text_field( $_POST['laminated'] ?? 'no' );
     $white_border = sanitize_text_field( $_POST['white_border'] ?? 'yes' );
+    $border_level = max( 0, min( 5, intval( $_POST['border_level'] ?? 0 ) ) );
     $quantity  = max( 1, intval( $_POST['quantity'] ?? 1 ) );
     $price_each = floatval( $_POST['price_each'] ?? 0 );
+    $proof_file = sanitize_file_name( $_POST['proof_file'] ?? '' );
     $total     = floatval( $_POST['total_price'] ?? 0 );
 
-    // Enforce global minimum quantity
-    $min_qty = max( 1, (int) get_option( 'sc_min_quantity', 1 ) );
+    // Enforce minimum quantity (per-size overrides global)
+    $sizes = get_option( 'sc_sizes', array() );
+    $size_min = isset( $sizes[ $size_idx ]['min_qty'] ) ? (int) $sizes[ $size_idx ]['min_qty'] : 0;
+    $global_min = max( 1, (int) get_option( 'sc_min_quantity', 1 ) );
+    $min_qty = $size_min > 0 ? $size_min : $global_min;
     if ( $quantity < $min_qty ) {
         wp_send_json_error( 'Minimum order quantity is ' . $min_qty . ' stickers.' );
     }
 
-    // Enforce lamination setting
-    $lam_enabled = get_option( 'sc_lamination_enabled', '1' ) === '1';
-    if ( ! $lam_enabled ) {
-        $laminated = 'no';
-    }
-
     // Enforce hidden sticker check
     $hidden_stickers = get_option( 'sc_hidden_stickers', array() );
-    $sizes = get_option( 'sc_sizes', array() );
     $sticker_key = $size_idx . '_' . $material . '_' . $finish . '_' . $laminated;
     if ( in_array( $sticker_key, $hidden_stickers, true ) ) {
         wp_send_json_error( 'This sticker configuration is currently unavailable.' );
@@ -216,8 +259,11 @@ function sc_add_to_cart() {
                 'finish'        => $finish,
                 'laminated'     => $laminated,
                 'white_border'  => $white_border,
+                'border_level'  => $border_level,
                 'price_each'    => $price_each,
                 'attachment_id' => $sc_attachment_id,
+                'proof_file'    => $proof_file,
+                'proof_url'     => $proof_file ? esc_url( $upload_dir['baseurl'] . '/sticker-creator/' . $proof_file ) : '',
             ),
         );
 
@@ -356,12 +402,9 @@ function sc_remove_background() {
     usort( $bg_colors, function( $a, $b ) { return $b['count'] - $a['count']; } );
     $bg = $bg_colors[0];
 
-    // Use a generous tolerance (white/light backgrounds need ~80)
-    $tolerance = 70;
-    // If background is near-white, boost tolerance
-    if ( $bg['r'] > 200 && $bg['g'] > 200 && $bg['b'] > 200 ) {
-        $tolerance = 90;
-    }
+    // Tolerance from user slider — respect exactly, no auto-boost
+    $tolerance = isset( $_POST['tolerance'] ) ? intval( $_POST['tolerance'] ) : 120;
+    $tolerance = max( 5, min( 180, $tolerance ) );
 
     // Flood-fill background removal from ALL edge pixels using BFS
     $visited = array();
@@ -396,12 +439,59 @@ function sc_remove_background() {
 
         if ( $dist <= $tolerance ) {
             imagesetpixel( $out, $px, $py, $transparent );
-            // Enqueue neighbors (step by 1 for accuracy)
+            // Enqueue 8-connected neighbors for thorough removal
             $queue->enqueue( array( $px + 1, $py ) );
             $queue->enqueue( array( $px - 1, $py ) );
             $queue->enqueue( array( $px, $py + 1 ) );
             $queue->enqueue( array( $px, $py - 1 ) );
+            $queue->enqueue( array( $px + 1, $py + 1 ) );
+            $queue->enqueue( array( $px - 1, $py - 1 ) );
+            $queue->enqueue( array( $px + 1, $py - 1 ) );
+            $queue->enqueue( array( $px - 1, $py + 1 ) );
         }
+    }
+
+    // Edge cleanup: remove thin fringe pixels adjacent to removed areas
+    for ( $pass = 0; $pass < 2; $pass++ ) {
+        $to_remove = array();
+        for ( $py = 0; $py < $h; $py++ ) {
+            for ( $px = 0; $px < $w; $px++ ) {
+                $rgb = imagecolorat( $out, $px, $py );
+                $a = ( $rgb >> 24 ) & 0x7F;
+                if ( $a === 127 ) continue;
+
+                // Check 8-connected neighbors for transparency
+                $near_transparent = false;
+                for ( $dy = -1; $dy <= 1 && ! $near_transparent; $dy++ ) {
+                    for ( $dx = -1; $dx <= 1 && ! $near_transparent; $dx++ ) {
+                        if ( $dx === 0 && $dy === 0 ) continue;
+                        $nx = $px + $dx;
+                        $ny = $py + $dy;
+                        if ( $nx < 0 || $ny < 0 || $nx >= $w || $ny >= $h ) {
+                            $near_transparent = true;
+                        } else {
+                            $na = ( imagecolorat( $out, $nx, $ny ) >> 24 ) & 0x7F;
+                            if ( $na === 127 ) $near_transparent = true;
+                        }
+                    }
+                }
+                if ( ! $near_transparent ) continue;
+
+                $r = ( $rgb >> 16 ) & 0xFF;
+                $g = ( $rgb >> 8 ) & 0xFF;
+                $b = $rgb & 0xFF;
+                $dist = sqrt( pow( $r - $bg['r'], 2 ) + pow( $g - $bg['g'], 2 ) + pow( $b - $bg['b'], 2 ) );
+
+                // Remove fringe pixel if close to background color
+                if ( $dist <= $tolerance * 1.3 ) {
+                    $to_remove[] = array( $px, $py );
+                }
+            }
+        }
+        foreach ( $to_remove as $pt ) {
+            imagesetpixel( $out, $pt[0], $pt[1], $transparent );
+        }
+        if ( empty( $to_remove ) ) break; // no more fringe to remove
     }
 
     imagedestroy( $src );

@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * WooCommerce integration for Sticker Creator.
+ * WooCommerce integration for StickerPress.
  */
 
 /**
@@ -98,9 +98,11 @@ function sc_wc_display_cart_item_data( $item_data, $cart_item ) {
     $item_data[] = array( 'key' => 'Size',       'value' => $size_label );
     $item_data[] = array( 'key' => 'Material',   'value' => ucfirst( $sticker['material'] ) );
     $item_data[] = array( 'key' => 'Finish',     'value' => ucfirst( $sticker['finish'] ) );
-    $item_data[] = array( 'key' => 'Lamination', 'value' => $sticker['laminated'] === 'yes' ? 'Yes' : 'No' );
+    $item_data[] = array( 'key' => 'Lamination', 'value' => $sticker['laminated'] === 'yes' ? 'Laminated' : 'Non-Laminated' );
     $item_data[] = array( 'key' => 'Cut Type',   'value' => ucwords( str_replace( '-', ' ', $sticker['cut'] ) ) );
-    $item_data[] = array( 'key' => 'White Border', 'value' => ( isset( $sticker['white_border'] ) && $sticker['white_border'] === 'no' ) ? 'No' : 'Yes' );
+    $border_level = isset( $sticker['border_level'] ) ? (int) $sticker['border_level'] : ( ( isset( $sticker['white_border'] ) && $sticker['white_border'] === 'no' ) ? 0 : 2 );
+    $border_label = $border_level > 0 ? 'Level ' . $border_level : 'None';
+    $item_data[] = array( 'key' => 'White Border', 'value' => $border_label );
 
     if ( ! empty( $sticker['artwork_url'] ) ) {
         $item_data[] = array(
@@ -110,13 +112,21 @@ function sc_wc_display_cart_item_data( $item_data, $cart_item ) {
         );
     }
 
+    if ( ! empty( $sticker['proof_url'] ) ) {
+        $item_data[] = array(
+            'key'     => 'Proof',
+            'value'   => '<a href="' . esc_url( $sticker['proof_url'] ) . '" target="_blank">View Proof</a>',
+            'display' => '<a href="' . esc_url( $sticker['proof_url'] ) . '" target="_blank">View Proof</a>',
+        );
+    }
+
     $item_data[] = array( 'key' => 'Price Each', 'value' => '$' . number_format( (float) $sticker['price_each'], 2 ) );
 
     return $item_data;
 }
 
 /**
- * Save custom sticker data to the order line‑item meta.
+ * Save custom sticker data to the order lineâ€‘item meta.
  */
 add_action( 'woocommerce_checkout_create_order_line_item', 'sc_wc_save_order_item_meta', 10, 4 );
 function sc_wc_save_order_item_meta( $item, $cart_item_key, $values, $order ) {
@@ -133,13 +143,23 @@ function sc_wc_save_order_item_meta( $item, $cart_item_key, $values, $order ) {
     $item->add_meta_data( 'Size',            $size_label, true );
     $item->add_meta_data( 'Material',        ucfirst( $sticker['material'] ), true );
     $item->add_meta_data( 'Finish',          ucfirst( $sticker['finish'] ), true );
-    $item->add_meta_data( 'Lamination',      $sticker['laminated'] === 'yes' ? 'Yes' : 'No', true );
+    $item->add_meta_data( 'Lamination',      $sticker['laminated'] === 'yes' ? 'Laminated' : 'Non-Laminated', true );
     $item->add_meta_data( 'Cut Type',        ucwords( str_replace( '-', ' ', $sticker['cut'] ) ), true );
-    $item->add_meta_data( 'White Border',    ( isset( $sticker['white_border'] ) && $sticker['white_border'] === 'no' ) ? 'No' : 'Yes', true );
+    $border_level = isset( $sticker['border_level'] ) ? (int) $sticker['border_level'] : ( ( isset( $sticker['white_border'] ) && $sticker['white_border'] === 'no' ) ? 0 : 2 );
+    $border_label = $border_level > 0 ? 'Level ' . $border_level : 'None';
+    $item->add_meta_data( 'White Border',    $border_label, true );
     $item->add_meta_data( '_sc_white_border', isset( $sticker['white_border'] ) ? $sticker['white_border'] : 'yes', true );
+    $item->add_meta_data( '_sc_border_level', $border_level, true );
     $item->add_meta_data( '_sc_price_each',  $sticker['price_each'], true );
     if ( ! empty( $sticker['attachment_id'] ) ) {
         $item->add_meta_data( '_sc_attachment_id', (int) $sticker['attachment_id'], true );
+    }
+    if ( ! empty( $sticker['proof_file'] ) ) {
+        $upload_dir = wp_upload_dir();
+        $proof_url = $upload_dir['baseurl'] . '/sticker-creator/' . $sticker['proof_file'];
+        $item->add_meta_data( '_sc_proof_file', $sticker['proof_file'], true );
+        $item->add_meta_data( '_sc_proof_url', $proof_url, true );
+        $item->add_meta_data( 'Proof File', $proof_url, true );
     }
 }
 
@@ -165,6 +185,8 @@ function sc_wc_hide_order_itemmeta( $hidden ) {
     $hidden[] = '_sc_price_each';
     $hidden[] = '_sc_attachment_id';
     $hidden[] = '_sc_white_border';
+    $hidden[] = '_sc_border_level';
+    $hidden[] = '_sc_proof_file';
     $hidden[] = '_sc_proof_url';
     return $hidden;
 }
@@ -214,8 +236,12 @@ function sc_wc_artwork_meta_link( $display_value, $meta, $item ) {
  */
 add_filter( 'woocommerce_cart_item_thumbnail', 'sc_wc_cart_thumbnail', 10, 3 );
 function sc_wc_cart_thumbnail( $thumbnail, $cart_item, $cart_item_key ) {
-    if ( isset( $cart_item['sc_sticker'] ) && ! empty( $cart_item['sc_sticker']['artwork_url'] ) ) {
-        return '<img src="' . esc_url( $cart_item['sc_sticker']['artwork_url'] ) . '" alt="Custom Sticker" style="max-width:80px;max-height:80px;" />';
+    if ( isset( $cart_item['sc_sticker'] ) ) {
+        // Prefer proof image for cart thumbnail
+        $url = ! empty( $cart_item['sc_sticker']['proof_url'] ) ? $cart_item['sc_sticker']['proof_url'] : ( ! empty( $cart_item['sc_sticker']['artwork_url'] ) ? $cart_item['sc_sticker']['artwork_url'] : '' );
+        if ( $url ) {
+            return '<img src="' . esc_url( $url ) . '" alt="Custom Sticker" style="max-width:80px;max-height:80px;" />';
+        }
     }
     return $thumbnail;
 }
@@ -245,7 +271,7 @@ function sc_wc_cart_item_name( $name, $cart_item, $cart_item_key ) {
         $sizes   = get_option( 'sc_sizes', array() );
         $si      = isset( $sticker['size_index'] ) ? (int) $sticker['size_index'] : 0;
         $size_label = isset( $sizes[ $si ] ) ? $sizes[ $si ]['label'] : '';
-        return 'Custom Sticker – ' . esc_html( $size_label ) . ' ' . esc_html( ucfirst( $sticker['material'] ) );
+        return 'Custom Sticker â€“ ' . esc_html( $size_label ) . ' ' . esc_html( ucfirst( $sticker['material'] ) );
     }
     return $name;
 }
@@ -272,7 +298,7 @@ function sc_wc_schedule_proof_generation( $order_id ) {
 
 /**
  * Also generate proofs when order reaches processing/completed status.
- * This is the reliable fallback — runs in a separate PHP request from checkout.
+ * This is the reliable fallback â€” runs in a separate PHP request from checkout.
  */
 add_action( 'sc_generate_proofs_event', 'sc_wc_generate_proofs', 10, 1 );
 add_action( 'woocommerce_order_status_processing', 'sc_wc_generate_proofs', 5, 1 );
@@ -287,7 +313,7 @@ function sc_wc_generate_proofs( $order_id ) {
 
     if ( $order->get_meta( '_sc_proofs_generated' ) ) return;
 
-    error_log( 'Sticker Creator: Starting proof generation for order #' . $order_id );
+    error_log( 'StickerPress: Starting proof generation for order #' . $order_id );
 
     $upload_dir  = wp_upload_dir();
     $sticker_dir = $upload_dir['basedir'] . '/sticker-creator';
@@ -297,7 +323,7 @@ function sc_wc_generate_proofs( $order_id ) {
     }
 
     $has_imagick = extension_loaded( 'imagick' ) && class_exists( 'Imagick' );
-    error_log( 'Sticker Creator: Imagick available: ' . ( $has_imagick ? 'yes' : 'no' ) );
+    error_log( 'StickerPress: Imagick available: ' . ( $has_imagick ? 'yes' : 'no' ) );
 
     foreach ( $order->get_items() as $item_id => $item ) {
         $artwork_file = $item->get_meta( '_sc_artwork' );
@@ -307,7 +333,7 @@ function sc_wc_generate_proofs( $order_id ) {
 
         $artwork_path = $sticker_dir . '/' . sanitize_file_name( $artwork_file );
         if ( ! file_exists( $artwork_path ) ) {
-            error_log( 'Sticker Creator: Artwork file not found: ' . $artwork_path );
+            error_log( 'StickerPress: Artwork file not found: ' . $artwork_path );
             continue;
         }
 
@@ -315,7 +341,7 @@ function sc_wc_generate_proofs( $order_id ) {
         if ( in_array( $ext, array( 'pdf', 'ai', 'psd' ), true ) ) continue;
 
         $cut = strtolower( str_replace( ' ', '-', trim( $item->get_meta( 'Cut Type' ) ) ) );
-        error_log( 'Sticker Creator: Generating proof for item #' . $item_id . ', cut: ' . $cut . ', file: ' . $artwork_file );
+        error_log( 'StickerPress: Generating proof for item #' . $item_id . ', cut: ' . $cut . ', file: ' . $artwork_file );
 
         try {
             $white_border = $item->get_meta( '_sc_white_border' );
@@ -326,20 +352,20 @@ function sc_wc_generate_proofs( $order_id ) {
                 $item->add_meta_data( 'Proof File', $proof_url, true );
                 $item->add_meta_data( '_sc_proof_url', $proof_url, true );
                 $item->save();
-                error_log( 'Sticker Creator: Proof generated: ' . $proof_url );
+                error_log( 'StickerPress: Proof generated: ' . $proof_url );
             } else {
-                error_log( 'Sticker Creator: Proof generation returned false for item #' . $item_id );
+                error_log( 'StickerPress: Proof generation returned false for item #' . $item_id );
             }
         } catch ( Exception $e ) {
-            error_log( 'Sticker Creator: Proof generation EXCEPTION for order #' . $order_id . ': ' . $e->getMessage() );
+            error_log( 'StickerPress: Proof generation EXCEPTION for order #' . $order_id . ': ' . $e->getMessage() );
         } catch ( \Throwable $t ) {
-            error_log( 'Sticker Creator: Proof generation FATAL for order #' . $order_id . ': ' . $t->getMessage() );
+            error_log( 'StickerPress: Proof generation FATAL for order #' . $order_id . ': ' . $t->getMessage() );
         }
     }
 
     $order->update_meta_data( '_sc_proofs_generated', 1 );
     $order->save();
-    error_log( 'Sticker Creator: Proof generation complete for order #' . $order_id );
+    error_log( 'StickerPress: Proof generation complete for order #' . $order_id );
 }
 
 add_action( 'woocommerce_order_status_processing', 'sc_wc_email_artwork_to_admin', 10, 1 );
@@ -395,14 +421,14 @@ function sc_wc_email_artwork_to_admin( $order_id ) {
 
         $details[] = sprintf(
             "- %s | %s | %s | %s | %s | Qty: %d | $%s/ea",
-            $size, $material, $finish, $lam ? 'Laminated' : 'No Lam', $cut, $qty, number_format( (float) $each, 2 )
+            $size, $material, $finish, $lam === 'Laminated' ? 'Laminated' : 'Non-Laminated', $cut, $qty, number_format( (float) $each, 2 )
         );
     }
 
     if ( empty( $attachments ) ) return;
 
     $admin_email = get_option( 'admin_email' );
-    $subject     = sprintf( 'Sticker Order #%d – Artwork Files', $order_id );
+    $subject     = sprintf( 'Sticker Order #%d â€“ Artwork Files', $order_id );
     $message     = sprintf(
         "A new sticker order has been placed.\n\nOrder #%d\nCustomer: %s %s (%s)\n\nSticker Details:\n%s\n\nThe artwork file(s) are attached. PDF, AI, and PSD files are included as-is for production.\n\nView order: %s",
         $order_id,
@@ -446,30 +472,30 @@ function sc_generate_proof_png( $artwork_path, $item, $white_border = 'yes' ) {
 
     $has_imagick = extension_loaded( 'imagick' ) && class_exists( 'Imagick' );
 
-    error_log( 'Sticker Creator: sc_generate_proof_png called, cut=' . $cut . ', imagick=' . ( $has_imagick ? 'yes' : 'no' ) );
+    error_log( 'StickerPress: sc_generate_proof_png called, cut=' . $cut . ', imagick=' . ( $has_imagick ? 'yes' : 'no' ) );
 
     if ( $has_imagick ) {
         $result = sc_generate_proof_imagick( $artwork_path, $proof_path, $cut, $white_border );
         if ( $result ) {
-            error_log( 'Sticker Creator: Imagick proof success: ' . $proof_path );
+            error_log( 'StickerPress: Imagick proof success: ' . $proof_path );
             return $proof_path;
         }
-        error_log( 'Sticker Creator: Imagick proof FAILED, falling back to GD' );
+        error_log( 'StickerPress: Imagick proof FAILED, falling back to GD' );
     }
 
     // GD fallback
     $result = sc_generate_proof_gd( $artwork_path, $proof_path, $cut, $white_border );
     if ( $result ) {
-        error_log( 'Sticker Creator: GD proof success: ' . $proof_path );
+        error_log( 'StickerPress: GD proof success: ' . $proof_path );
         return $proof_path;
     }
 
-    error_log( 'Sticker Creator: Both Imagick and GD proof generation FAILED' );
+    error_log( 'StickerPress: Both Imagick and GD proof generation FAILED' );
     return false;
 }
 
 /**
- * ImageMagick proof generation — true contour tracing via morphology.
+ * ImageMagick proof generation â€” true contour tracing via morphology.
  */
 function sc_generate_proof_imagick( $artwork_path, $proof_path, $cut, $white_border ) {
     try {
@@ -540,20 +566,20 @@ function sc_generate_proof_imagick( $artwork_path, $proof_path, $cut, $white_bor
         return true;
 
     } catch ( Exception $e ) {
-        error_log( 'Sticker Creator proof (Imagick) Exception: ' . $e->getMessage() );
+        error_log( 'StickerPress proof (Imagick) Exception: ' . $e->getMessage() );
         return false;
     } catch ( \Throwable $t ) {
-        error_log( 'Sticker Creator proof (Imagick) Fatal: ' . $t->getMessage() );
+        error_log( 'StickerPress proof (Imagick) Fatal: ' . $t->getMessage() );
         return false;
     }
 }
 
 /**
- * Die-cut proof with ImageMagick — blur+threshold dilation (works on all IM versions).
+ * Die-cut proof with ImageMagick â€” blur+threshold dilation (works on all IM versions).
  */
 function sc_proof_imagick_diecut( $src, $proof_path, $w, $h, $fw, $fh, $total_pad, $pad, $white_border ) {
     try {
-        error_log( 'Sticker Creator: Die-cut Imagick proof start, w=' . $w . ', h=' . $h );
+        error_log( 'StickerPress: Die-cut Imagick proof start, w=' . $w . ', h=' . $h );
 
         // Extract alpha channel as a grayscale mask
         $alpha_mask = clone $src;
@@ -565,10 +591,10 @@ function sc_proof_imagick_diecut( $src, $proof_path, $w, $h, $fw, $fh, $total_pa
         // Check mask orientation: corner pixel should be background (black)
         $corner = $alpha_mask->getImagePixelColor( 0, 0 );
         $corner_rgb = $corner->getColor();
-        error_log( 'Sticker Creator: Corner pixel R=' . $corner_rgb['r'] );
+        error_log( 'StickerPress: Corner pixel R=' . $corner_rgb['r'] );
         if ( $corner_rgb['r'] > 128 ) {
             $alpha_mask->negateImage( false );
-            error_log( 'Sticker Creator: Negated alpha mask (was inverted)' );
+            error_log( 'StickerPress: Negated alpha mask (was inverted)' );
         }
         // Now: white = shape, black = background
 
@@ -581,7 +607,7 @@ function sc_proof_imagick_diecut( $src, $proof_path, $w, $h, $fw, $fh, $total_pa
         // Low threshold reclaims them as solid white at the expanded size
         $dilated->thresholdImage( 0.05 * Imagick::getQuantum() );
 
-        error_log( 'Sticker Creator: Blur+threshold dilation done, border_radius=' . $border_radius );
+        error_log( 'StickerPress: Blur+threshold dilation done, border_radius=' . $border_radius );
 
         // Create final canvas
         $canvas = new Imagick();
@@ -594,7 +620,7 @@ function sc_proof_imagick_diecut( $src, $proof_path, $w, $h, $fw, $fh, $total_pa
         $white_layer->setImageFormat( 'png' );
         $white_layer->setImageAlphaChannel( Imagick::ALPHACHANNEL_OPAQUE );
 
-        // Use the dilated mask as alpha: white in mask → opaque white, black → transparent
+        // Use the dilated mask as alpha: white in mask â†’ opaque white, black â†’ transparent
         $white_layer->compositeImage( $dilated, Imagick::COMPOSITE_COPYOPACITY, 0, 0 );
 
         $canvas->compositeImage( $white_layer, Imagick::COMPOSITE_OVER, $total_pad, $total_pad );
@@ -610,14 +636,14 @@ function sc_proof_imagick_diecut( $src, $proof_path, $w, $h, $fw, $fh, $total_pa
 
         $canvas->writeImage( $proof_path );
         $canvas->destroy();
-        error_log( 'Sticker Creator: Die-cut Imagick proof SUCCESS' );
+        error_log( 'StickerPress: Die-cut Imagick proof SUCCESS' );
         return true;
 
     } catch ( Exception $e ) {
-        error_log( 'Sticker Creator die-cut proof (Imagick) Exception: ' . $e->getMessage() );
+        error_log( 'StickerPress die-cut proof (Imagick) Exception: ' . $e->getMessage() );
         return false;
     } catch ( \Throwable $t ) {
-        error_log( 'Sticker Creator die-cut proof (Imagick) Fatal: ' . $t->getMessage() );
+        error_log( 'StickerPress die-cut proof (Imagick) Fatal: ' . $t->getMessage() );
         return false;
     }
 }
@@ -677,7 +703,7 @@ function sc_generate_proof_gd( $artwork_path, $proof_path, $cut, $white_border )
         }
 
         // Iterative 1px dilation: each pass expands by 1 pixel (4-connected)
-        // O(w * h * border_r) — fast even for large images
+        // O(w * h * border_r) â€” fast even for large images
         for ( $pass = 0; $pass < $border_r; $pass++ ) {
             $next = clone $curr;
             for ( $y = 0; $y < $h; $y++ ) {

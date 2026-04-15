@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: Sticker Creator
+ * Plugin Name: StickerPress
  * Description: Custom sticker ordering plugin with artwork upload, cut types, real-time preview, and dynamic pricing.
  * Version: 1.0.0
  * Author: Sticker Business
- * Text Domain: sticker-creator
+ * Text Domain: sticker-press
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'SC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'SC_VERSION', '1.1.0' );
+define( 'SC_VERSION', '1.9.0' );
 
 /**
  * Activation: create default options.
@@ -53,6 +53,19 @@ function sc_activate() {
     if ( false === get_option( 'sc_sizes' ) ) {
         add_option( 'sc_sizes', $default_sizes );
     }
+    if ( false === get_option( 'sc_materials' ) ) {
+        add_option( 'sc_materials', array(
+            array( 'slug' => 'vinyl', 'label' => 'Vinyl' ),
+            array( 'slug' => 'paper', 'label' => 'Paper' ),
+            array( 'slug' => 'clear', 'label' => 'Clear' ),
+        ));
+    }
+    if ( false === get_option( 'sc_finishes' ) ) {
+        add_option( 'sc_finishes', array(
+            array( 'slug' => 'glossy', 'label' => 'Glossy' ),
+            array( 'slug' => 'matte', 'label' => 'Matte' ),
+        ));
+    }
     if ( false === get_option( 'sc_pricing' ) ) {
         add_option( 'sc_pricing', $default_pricing );
     }
@@ -84,6 +97,26 @@ function sc_activate() {
     }
 }
 register_activation_hook( __FILE__, 'sc_activate' );
+
+/**
+ * Ensure new options exist for upgrades (runs on every load, lightweight).
+ */
+add_action( 'init', 'sc_maybe_seed_options' );
+function sc_maybe_seed_options() {
+    if ( false === get_option( 'sc_materials' ) ) {
+        add_option( 'sc_materials', array(
+            array( 'slug' => 'vinyl', 'label' => 'Vinyl' ),
+            array( 'slug' => 'paper', 'label' => 'Paper' ),
+            array( 'slug' => 'clear', 'label' => 'Clear' ),
+        ));
+    }
+    if ( false === get_option( 'sc_finishes' ) ) {
+        add_option( 'sc_finishes', array(
+            array( 'slug' => 'glossy', 'label' => 'Glossy' ),
+            array( 'slug' => 'matte', 'label' => 'Matte' ),
+        ));
+    }
+}
 
 /**
  * Load admin.
